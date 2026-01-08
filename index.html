@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Claude Remote">
+    <title>Claude Remote</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        :root {
+            --bg: #FAF9F7;
+            --text: #3D3929;
+            --text-muted: #6B6459;
+            --text-subtle: #9A9489;
+            --accent: #da7756;
+            --accent-shadow: rgba(218, 119, 86, 0.3);
+            --success: #5a9a6e;
+            --border: #E8E5E0;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            min-height: 100dvh;
+            background: var(--bg);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 32px;
+            padding: 32px 24px;
+            color: var(--text);
+        }
+        
+        /* Header */
+        .header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .brand-icon {
+            width: 24px;
+            height: 24px;
+        }
+        
+        .brand-name {
+            font-size: 24px;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+            font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+        }
+        
+        .tagline {
+            color: var(--text-subtle);
+            font-size: 13px;
+            font-style: italic;
+            font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+            margin: 0;
+        }
+        
+        /* Main action area */
+        .main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .enter-button {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: none;
+            background: var(--accent);
+            box-shadow: 0 6px 20px var(--accent-shadow), 0 2px 4px rgba(0,0,0,0.06);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.12s ease-out;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .enter-button:active {
+            transform: scale(0.96);
+            box-shadow: 0 2px 8px rgba(218, 119, 86, 0.25);
+        }
+        
+        .enter-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .enter-button .icon {
+            font-size: 56px;
+            font-weight: 300;
+            color: white;
+            line-height: 1;
+            margin-top: -3px;
+        }
+        
+        .label {
+            font-size: 18px;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+            margin: 0;
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--border);
+            transition: all 0.3s;
+        }
+        
+        .status-dot.connected {
+            background: var(--success);
+            box-shadow: 0 0 6px rgba(90, 154, 110, 0.4);
+        }
+        
+        .status-text {
+            color: var(--text-subtle);
+            font-size: 14px;
+        }
+        
+        /* Footer */
+        .footer {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+        
+        .footer a {
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+        }
+        
+        .footer a:hover {
+            color: var(--accent);
+        }
+        
+        .footer .sep {
+            color: var(--border);
+            font-size: 14px;
+        }
+        
+        /* Setup modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            z-index: 100;
+        }
+        
+        .modal-overlay.show {
+            display: flex;
+        }
+        
+        .modal {
+            background: var(--bg);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 320px;
+            width: 100%;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+        }
+        
+        .modal h2 {
+            margin: 0 0 16px;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .modal p {
+            margin: 0 0 16px;
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .modal input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: ui-monospace, monospace;
+            background: white;
+            color: var(--text);
+            text-align: center;
+        }
+        
+        .modal input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .modal-actions button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        
+        .btn-secondary {
+            background: var(--border);
+            border: none;
+            color: var(--text-muted);
+        }
+        
+        .btn-primary {
+            background: var(--accent);
+            border: none;
+            color: white;
+        }
+        
+        /* Home indicator */
+        .home-indicator {
+            position: fixed;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 134px;
+            height: 5px;
+            background: var(--border);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="brand">
+            <svg class="brand-icon" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" fill="#da7756"/>
+            </svg>
+            <span class="brand-name">Claude Remote</span>
+        </div>
+        <p class="tagline">For when leaning forward is too much</p>
+    </div>
+    
+    <!-- Main -->
+    <div class="main">
+        <button class="enter-button" id="enterBtn" disabled>
+            <span class="icon">↵</span>
+        </button>
+        <p class="label">Press to send Enter</p>
+        <div class="status">
+            <div class="status-dot" id="statusDot"></div>
+            <span class="status-text" id="statusText">Not connected</span>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+        <a href="#" id="setupLink">Setup</a>
+        <span class="sep">•</span>
+        <a href="https://github.com/b1rdmania/claude-remote" target="_blank">Docs</a>
+    </div>
+    
+    <!-- Setup Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <h2>Connect to Mac</h2>
+            <p>Enter the IP address shown when you run the server on your Mac.</p>
+            <input 
+                type="text" 
+                id="serverInput"
+                placeholder="192.168.x.x:5050"
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+            >
+            <div class="modal-actions">
+                <button class="btn-secondary" id="cancelBtn">Cancel</button>
+                <button class="btn-primary" id="saveBtn">Connect</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="home-indicator"></div>
+
+    <script>
+        const enterBtn = document.getElementById('enterBtn');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const setupLink = document.getElementById('setupLink');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const serverInput = document.getElementById('serverInput');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        
+        // Load saved server
+        const savedUrl = localStorage.getItem('serverUrl');
+        if (savedUrl) {
+            serverInput.value = savedUrl;
+            checkConnection();
+        }
+        
+        // Modal controls
+        setupLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            modalOverlay.classList.add('show');
+            serverInput.focus();
+        });
+        
+        cancelBtn.addEventListener('click', () => {
+            modalOverlay.classList.remove('show');
+        });
+        
+        saveBtn.addEventListener('click', () => {
+            localStorage.setItem('serverUrl', serverInput.value);
+            modalOverlay.classList.remove('show');
+            checkConnection();
+        });
+        
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                modalOverlay.classList.remove('show');
+            }
+        });
+        
+        serverInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                saveBtn.click();
+            }
+        });
+        
+        function getServerUrl() {
+            let url = serverInput.value.trim();
+            if (!url) return null;
+            if (!url.startsWith('http')) url = 'http://' + url;
+            return url;
+        }
+        
+        async function checkConnection() {
+            const url = getServerUrl();
+            if (!url) {
+                setStatus(false, 'Not connected');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${url}/health`, { 
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                if (response.ok) {
+                    setStatus(true, 'Connected to MacBook Pro');
+                } else {
+                    setStatus(false, 'Connection failed');
+                }
+            } catch {
+                setStatus(false, 'Not connected');
+            }
+        }
+        
+        function setStatus(connected, text) {
+            if (connected) {
+                statusDot.classList.add('connected');
+                enterBtn.disabled = false;
+            } else {
+                statusDot.classList.remove('connected');
+                enterBtn.disabled = true;
+            }
+            statusText.textContent = text;
+        }
+        
+        // Check connection every 5 seconds
+        setInterval(checkConnection, 5000);
+        
+        // Handle button press
+        enterBtn.addEventListener('click', async () => {
+            const url = getServerUrl();
+            if (!url || enterBtn.disabled) return;
+            
+            // Haptic feedback
+            if (navigator.vibrate) {
+                navigator.vibrate(10);
+            }
+            
+            try {
+                await fetch(`${url}/enter`, { 
+                    method: 'POST',
+                    mode: 'cors'
+                });
+            } catch (err) {
+                console.error('Failed to send:', err);
+                checkConnection();
+            }
+        });
+        
+        // Prevent zoom on double tap
+        document.addEventListener('dblclick', (e) => {
+            e.preventDefault();
+        }, { passive: false });
+    </script>
+</body>
+</html>
